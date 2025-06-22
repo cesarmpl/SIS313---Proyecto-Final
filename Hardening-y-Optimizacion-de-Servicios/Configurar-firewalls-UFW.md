@@ -67,4 +67,4 @@ To                         Action      From
 9103/tcp                    ALLOW       Anywhere     # Node Exporter
 ```
 
-Y como tal solo se aplica **sufo ufw allow "-"** para añadir el puerto que se le permitirá ingresar, y con esto tendríamos toda la configuración de UFW con los puertos que tienen acceso a los servidores.
+Y como tal solo se aplica **sudo ufw allow "-"** para añadir el puerto que se le permitirá ingresar, y con esto tendríamos toda la configuración de UFW con los puertos que tienen acceso a los servidores.
