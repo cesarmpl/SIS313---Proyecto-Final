@@ -107,3 +107,58 @@ Nos dará algo como:
 +------------------+----------+--------------+------------------+-------------------+
 ```
 * Guardamos esta información ya que nos servirá para configurar el Slave. 
+
+
+**Consideraciones Clave para la Implementación:**
+
+**Tolerancia a Fallos en Discos (RAID):**
+
+Para ello, se aplicará el **RAID 5** al servidor Master de Base de Datos. Ya que el DB Master es el que guarda los datos más críticos, es buena práctica configurar el RAID en ese server.
+
+**1. Crear el arreglo RAID 5** y definimos los 3 discos duros virtuales que se utilizarán en el mismo **(/dev/sdb /dev/sdc /dev/sdd)**:
+
+```bash
+ sudo mdadm --create --verbose /dev/md5 --level-5 --raid-devices=3 /dev/sdb /dev/sdc /dev/sdd
+```
+
+**2. Crear sistema de archivos en el RAID:**
+
+Creamos un sistema de **archivos ext4** en el dispositivo RAID y con **-F:** forzamos el formateo, útil si hay datos previos.
+
+```bash
+sudo mkfs.ext4 -F /dev/md5
+```
+
+**3. Crear el Punto de Montaje y Montar el RAID:**
+
+Esto hace que el dispositivo RAID sea accesible para leer y escribir datos. Para ello:
+
+```bash
+sudo mkdir -p /mnt/raid5
+sudo mount /dev/md5 /mnt/raid5 
+sudo chown cesar:cesar /mnt/raid5 
+```
+
+**4. Crear Archivos Importantes en el RAID:**
+
+Estos archivos se usarán para verificar la integridad de los datos después de simular la falla de un disco.
+
+```bash
+echo "Crear Raid5 para BD Master" > /mnt/raid5/prueba1.txt 
+ls /mnt/raid5 #paraver
+```
+
+**5.	Montaje automático al arrancar (fstab)**
+
+Debemos obtener el **UUID** utilizamos el siguiente comando:
+
+```bash
+sudo blkid /dev/md5
+```
+Y una vez obtenido el UUID con ese comando, nos dirigimos al archivo **sudo nano /etc/fstab** y en la ultima línea colocamos: 
+
+```bash
+UUID= <la obtenida> /mnt/raid5 ext4 defaults,nofail,discard 0 0 
+```
+
+Y con esto ya tendríamos el servidor con **RAID 5 con tolerancia a fallos**. 
