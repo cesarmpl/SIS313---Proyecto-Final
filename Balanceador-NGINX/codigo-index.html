@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Proyecto Final - CRUD con Balanceador</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+        h1 { color: #ffd8d8; text-align: center; }
+        .server { font-weight: bold; margin-bottom: 20px; text-align: center; }
+        .item { border-bottom: 1px solid #ccc; padding: 5px 0; display: flex; justify-content: space-between; align-items: center; }
+        .item span { flex-grow: 1; }
+        button { margin-left: 10px; }
+        form { margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        input[type="text"], input[type="number"] { flex-grow: 1; padding: 5px; min-width: 150px; }
+        label { margin-right: 5px; }
+    </style>
+</head>
+<body>
+    <h1>CRUD con Balanceador - Proyecto Final</h1>
+    <div class="server" id="serverInfo">Cargando servidor...</div>
+
+    <div id="itemsList">Cargando items...</div>
+
+    <form id="createForm">
+        <input type="text" id="newData" placeholder="Nuevo dato" required />
+        <button type="submit">Agregar</button>
+    </form>
+
+    <form id="updateForm">
+        <input type="number" id="updateId" placeholder="ID a modificar" required min="1" />
+        <input type="text" id="updateData" placeholder="Nuevo dato" required />
+        <button type="submit">Actualizar</button>
+    </form>
+
+    <form id="deleteForm">
+        <input type="number" id="deleteId" placeholder="ID a eliminar" required min="1" />
+        <button type="submit">Eliminar</button>
+    </form>
+
+    <script>
+        // Mostrar items y servidor que responde
+        async function fetchItems() {
+            try {
+                const response = await fetch('/items');
+                const data = await response.json();
+
+                // Mostrar servidor (si viene)
+                if (data.server) {
+                    document.getElementById('serverInfo').innerText = 'Respuesta de: ' + data.server;
+                } else {
+                    document.getElementById('serverInfo').innerText = 'Servidor no especificado';
+                }
+
+                // Mostrar items
+                const list = document.getElementById('itemsList');
+                list.innerHTML = '';
+
+                (data.items || []).forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'item';
+                    div.innerHTML = `<span>ID: ${item.id} - Data: ${item.data || '(vacío)'}</span>`;
+                    list.appendChild(div);
+                });
+            } catch (error) {
+                document.getElementById('serverInfo').innerText = 'Error al obtener datos';
+                document.getElementById('itemsList').innerText = error;
+            }
+        }
+
+        // Crear nuevo item (POST)
+        document.getElementById('createForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const newData = document.getElementById('newData').value.trim();
+            if (!newData) return alert('Ingrese un dato válido');
+
+            try {
+                const res = await fetch('/items', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: newData })
+                });
+                const result = await res.json();
+                alert(result.message || 'Registro creado');
+                document.getElementById('newData').value = '';
+                fetchItems();
+            } catch (err) {
+                alert('Error al crear el registro');
+            }
+        });
+
+        // Actualizar item (PUT)
+        document.getElementById('updateForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = document.getElementById('updateId').value.trim();
+            const newData = document.getElementById('updateData').value.trim();
+            if (!id || !newData) return alert('Complete todos los campos');
+
+            try {
+                const res = await fetch(`/items/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: newData })
+                });
+                const result = await res.json();
+                alert(result.message || 'Registro actualizado');
+                document.getElementById('updateId').value = '';
+                document.getElementById('updateData').value = '';
+                fetchItems();
+            } catch (err) {
+                alert('Error al actualizar el registro');
+            }
+        });
+
+        // Eliminar item (DELETE)
+        document.getElementById('deleteForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = document.getElementById('deleteId').value.trim();
+            if (!id) return alert('Ingrese un ID válido');
+
+            if (!confirm(`¿Seguro que desea eliminar el item con ID ${id}?`)) return;
+
+            try {
+                const res = await fetch(`/items/${id}`, {
+                    method: 'DELETE'
+                });
+                const result = await res.json();
+                alert(result.message || 'Registro eliminado');
+                document.getElementById('deleteId').value = '';
+                fetchItems();
+            } catch (err) {
+                alert('Error al eliminar el registro');
+            }
+        });
+
+        // Al cargar la página, mostrar items
+        fetchItems();
+
+        // Opcional: refrescar cada 10 segundos
+        setInterval(fetchItems, 10000);
+    </script>
+</body>
+</html>
